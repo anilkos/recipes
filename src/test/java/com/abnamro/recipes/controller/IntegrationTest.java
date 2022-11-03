@@ -106,7 +106,7 @@ class IntegrationTest {
         String url = host + port + "/" + ApiConstants.API_VERSION + ApiMapping.SEARCH_RECIPE;
 
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url)
-                .queryParam("meatType", MealType.MEATY.toString());
+                .queryParam("mealType", MealType.MEATY.toString());
         url = uriBuilder.toUriString();
         HttpEntity<RecipeRequestDto> request = new HttpEntity<>(headers);
         ResponseEntity responseEntity = this.restTemplate.exchange

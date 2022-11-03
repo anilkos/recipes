@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class IngredientDto {
     private String ingredientName;
     private String metric;

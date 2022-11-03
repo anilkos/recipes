@@ -80,6 +80,12 @@ public class RecipeServiceImpl implements RecipeService {
         return newRecipe;
     }
     private void generateQuery(MealType mealType, BigDecimal servingNumber, List<String> includingIngredientName, List<String> exludingIngredientName, Query query, String instructions) {
+        if(servingNumber !=null)
+            query.addCriteria(Criteria.where("numberOfPeople").lte(servingNumber));
+        if(mealType !=null)
+            query.addCriteria(Criteria.where("mealType").is(mealType));
+        if(instructions != null)
+            query.addCriteria(Criteria.where("instructions").regex(instructions));
         if(exludingIngredientName != null && exludingIngredientName.size()>0 &&
                 includingIngredientName != null && includingIngredientName.size()>0) {
             verifyExcludingIncluding(includingIngredientName,exludingIngredientName);
@@ -88,19 +94,14 @@ public class RecipeServiceImpl implements RecipeService {
                             where("ingredientList.name").in(includingIngredientName.toArray(String[]::new)),
                     Criteria.where("ingredientList.name").not().in(exludingIngredientName.toArray(String[]::new)));
             query.addCriteria(criteria);
+        } else {
+            if(exludingIngredientName != null && exludingIngredientName.size()>0) {
+                query.addCriteria(Criteria.where("ingredientList.name").not().in(exludingIngredientName.toArray(String[]::new)));
+            }
+            if(includingIngredientName != null && includingIngredientName.size()>0) {
+                query.addCriteria(Criteria.where("ingredientList.name").in(includingIngredientName.toArray(String[]::new)));
+            }
         }
-        if(exludingIngredientName != null && exludingIngredientName.size()>0) {
-            query.addCriteria(Criteria.where("ingredientList.name").not().in(exludingIngredientName.toArray(String[]::new)));
-        }
-        if(includingIngredientName != null && includingIngredientName.size()>0) {
-            query.addCriteria(Criteria.where("ingredientList.name").in(includingIngredientName.toArray(String[]::new)));
-        }
-        if(servingNumber !=null)
-            query.addCriteria(Criteria.where("numberOfPeople").lte(servingNumber));
-        if(mealType !=null)
-            query.addCriteria(Criteria.where("mealType").is(mealType));
-        if(instructions != null)
-            query.addCriteria(Criteria.where("instructions").regex(instructions));
     }
 
     private void verifyExcludingIncluding(List<String> includingIngredientName, List<String> exludingIngredientName) {

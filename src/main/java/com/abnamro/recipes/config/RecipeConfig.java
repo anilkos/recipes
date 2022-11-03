@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import javax.management.Query;
 import java.time.Duration;
 
 @Component
@@ -24,4 +25,10 @@ public class RecipeConfig {
                 .setReadTimeout(Duration.ofSeconds(ApiConstants.TIME_OUT))
                 .build();
     }
+
+    @Bean
+    public Query query() {
+        return new Query();
+    }
+
 }

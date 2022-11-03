@@ -8,15 +8,19 @@ import com.abnamro.recipes.Model.MealType;
 import com.abnamro.recipes.entity.Recipe;
 import com.abnamro.recipes.exception.RecipeAlreadyExistException;
 import com.abnamro.recipes.exception.RecipeNotFoundException;
+import com.abnamro.recipes.exception.SearchParamException;
 import com.abnamro.recipes.repository.RecipeRepository;
 import com.abnamro.recipes.service.impl.RecipeServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,8 +30,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
 public class RecipeServiceTest {
     @Mock
@@ -37,6 +41,9 @@ public class RecipeServiceTest {
     private Recipe recipe;
     @Mock
     private ModelMapper modelMapper;
+    @Mock
+    private MongoTemplate mongoTemplate;
+
 
     private List<IngredientDto> ingredientDtoList;
 
@@ -94,6 +101,115 @@ public class RecipeServiceTest {
             recipeService.updateRecipe(recipeRequestDto);
         });
         assertThat(exception).isInstanceOf(RecipeNotFoundException.class);
+    }
+
+    @Test
+    void deleteRecipe() {
+        when(recipeRepository.findByTheRecipesRecipeName(any(String.class))).thenReturn(Optional.of(recipe));
+        doNothing().when(recipeRepository).delete(any());
+        recipeService.deleteRecipe("Humus");
+    }
+
+    @Test
+    void tryToDeleteNotExistedRecipe_Exception() {
+        when(recipeRepository.findByTheRecipesRecipeName(any(String.class))).thenReturn(Optional.empty());
+        Exception exception = assertThrows(RecipeNotFoundException.class, () -> {
+            recipeService.deleteRecipe("Humus");
+        });
+        assertThat(exception).isInstanceOf(RecipeNotFoundException.class);
+    }
+    @Test
+    void searchRecipe_BasicWithNoParams() {
+        when(mongoTemplate.find(any(),any())).thenReturn(List.of(recipe));
+        List<RecipeResponseDto> searchedRecipe = recipeService.fetchRecipes(null, null, null, null,null);
+        assertThat(searchedRecipe).isNotEmpty();
+        assertThat(searchedRecipe.get(0).getRecipeName()).isEqualTo(recipe.getRecipeName());
+    }
+
+    @Test
+    void searchRecipe_InstructionsBased() {
+        when(mongoTemplate.find(any(),any())).thenReturn(List.of(recipe));
+        ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
+
+        List<RecipeResponseDto> searchedRecipe = recipeService.fetchRecipes("squize", null, null, null,null);
+        verify(mongoTemplate).find(captor.capture(),eq(Recipe.class)); // get the product being saved
+        Query saved = captor.getValue();
+        assertThat(saved.getQueryObject().get("instructions").toString()).isEqualTo("squize");
+        assertThat(searchedRecipe).isNotEmpty();
+        assertThat(searchedRecipe.get(0).getRecipeName()).isEqualTo(recipe.getRecipeName());
+    }
+
+    @Test
+    void searchRecipe_mealTypeBased() {
+        when(mongoTemplate.find(any(),any())).thenReturn(List.of(recipe));
+        ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
+
+        List<RecipeResponseDto> searchedRecipe = recipeService.fetchRecipes(null, MealType.VEGAN, null, null,null);
+        verify(mongoTemplate).find(captor.capture(),eq(Recipe.class)); // get the product being saved
+        Query saved = captor.getValue();
+        assertThat(saved.getQueryObject().get("mealType").toString()).isEqualTo(MealType.VEGAN.toString());
+        assertThat(searchedRecipe).isNotEmpty();
+        assertThat(searchedRecipe.get(0).getRecipeName()).isEqualTo(recipe.getRecipeName());
+    }
+
+    @Test
+    void searchRecipe_ServingPeopleBased() {
+        when(mongoTemplate.find(any(),any())).thenReturn(List.of(recipe));
+        ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
+
+        List<RecipeResponseDto> searchedRecipe = recipeService.fetchRecipes(null,null , BigDecimal.TEN, null,null);
+        verify(mongoTemplate).find(captor.capture(),eq(Recipe.class)); // get the product being saved
+        Query saved = captor.getValue();
+        assertThat(saved.getQueryObject().get("numberOfPeople").toString()).isEqualTo("Document{{$lte=10}}");
+        assertThat(searchedRecipe).isNotEmpty();
+        assertThat(searchedRecipe.get(0).getRecipeName()).isEqualTo(recipe.getRecipeName());
+    }
+    @Test
+    void searchRecipe_IncludingIngredientBased() {
+        when(mongoTemplate.find(any(),any())).thenReturn(List.of(recipe));
+        ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
+
+        List<RecipeResponseDto> searchedRecipe = recipeService.fetchRecipes(null,null , null, List.of("Tahini","Chickpeas"),null);
+        verify(mongoTemplate).find(captor.capture(),eq(Recipe.class)); // get the product being saved
+        Query saved = captor.getValue();
+        assertThat(saved.getQueryObject().get("ingredientList.name")).isNotNull();
+        assertThat(searchedRecipe).isNotEmpty();
+        assertThat(searchedRecipe.get(0).getRecipeName()).isEqualTo(recipe.getRecipeName());
+    }
+
+    @Test
+    void searchRecipe_ExludingIngredientBased() {
+        when(mongoTemplate.find(any(),any())).thenReturn(List.of(recipe));
+        ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
+
+        List<RecipeResponseDto> searchedRecipe = recipeService.fetchRecipes(null,null , null, null,List.of("Tahini","Chickpeas"));
+        verify(mongoTemplate).find(captor.capture(),eq(Recipe.class)); // get the product being saved
+        Query saved = captor.getValue();
+        assertThat(saved.getQueryObject().get("ingredientList.name")).isNotNull();
+        assertThat(searchedRecipe).isNotEmpty();
+        assertThat(searchedRecipe.get(0).getRecipeName()).isEqualTo(recipe.getRecipeName());
+    }
+
+    @Test
+    void searchRecipe_BothIncludeExclude() {
+        when(mongoTemplate.find(any(),any())).thenReturn(List.of(recipe));
+        ArgumentCaptor<Query> captor = ArgumentCaptor.forClass(Query.class);
+
+        List<RecipeResponseDto> searchedRecipe = recipeService.fetchRecipes(null,null , null, List.of("Tahini"),List.of("Chickpeas"));
+        verify(mongoTemplate).find(captor.capture(),eq(Recipe.class)); // get the product being saved
+        Query saved = captor.getValue();
+
+        assertThat(saved.getQueryObject().toJson()).isNotNull();
+        assertThat(searchedRecipe).isNotEmpty();
+        assertThat(searchedRecipe.get(0).getRecipeName()).isEqualTo(recipe.getRecipeName());
+    }
+
+    @Test
+    void searchRecipe_IncludeExcludeSameIngredientException() {
+        Exception exception = assertThrows(SearchParamException.class, () -> {
+            recipeService.fetchRecipes(null,null , null, List.of("Tahini"),List.of("Tahini"));
+        });
+        assertThat(exception).isInstanceOf(SearchParamException.class);
     }
 
 }

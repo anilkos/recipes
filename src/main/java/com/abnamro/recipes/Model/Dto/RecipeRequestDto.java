@@ -10,7 +10,6 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class RecipeRequestDto {
     private String recipeName;
     private List<IngredientDto> ingredientList;

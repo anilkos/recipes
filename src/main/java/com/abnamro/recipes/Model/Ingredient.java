@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Ingredient {
     private String name;
     private String metric;
