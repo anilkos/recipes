@@ -4,8 +4,8 @@ This is a Recipe Tracking application that user can add, update, delete or searc
 
 ## To Use Application
 
-First you need to make sure that you have docker on your machine. 
-After that you need to fetch Mongo DB repository from central and then you need to run it on port 27017 or you 
+First you need to make sure that you have java 11 installed on your machine.  
+After that if you dont have installed mongodb on your computer then you need configure docker and fetch Mongo DB repository from central. then you need to run it on port 27017 or you 
 already have mongo db on your machine then you need to change connection url inside application.yml
 ```bash
 mvn springboot:run
