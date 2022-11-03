@@ -7,6 +7,7 @@ import com.abnamro.recipes.Model.MealType;
 import com.abnamro.recipes.entity.Recipe;
 import com.abnamro.recipes.exception.RecipeAlreadyExistException;
 import com.abnamro.recipes.exception.RecipeNotFoundException;
+import com.abnamro.recipes.exception.SearchParamException;
 import com.abnamro.recipes.repository.RecipeRepository;
 import com.abnamro.recipes.service.RecipeService;
 import org.modelmapper.ModelMapper;
@@ -81,6 +82,7 @@ public class RecipeServiceImpl implements RecipeService {
     private void generateQuery(MealType mealType, BigDecimal servingNumber, List<String> includingIngredientName, List<String> exludingIngredientName, Query query, String instructions) {
         if(exludingIngredientName != null && exludingIngredientName.size()>0 &&
                 includingIngredientName != null && includingIngredientName.size()>0) {
+            verifyExcludingIncluding(includingIngredientName,exludingIngredientName);
             Criteria criteria = new Criteria();
             criteria.andOperator(Criteria.
                             where("ingredientList.name").in(includingIngredientName.toArray(String[]::new)),
@@ -99,5 +101,12 @@ public class RecipeServiceImpl implements RecipeService {
             query.addCriteria(Criteria.where("mealType").is(mealType));
         if(instructions != null)
             query.addCriteria(Criteria.where("instructions").regex(instructions));
+    }
+
+    private void verifyExcludingIncluding(List<String> includingIngredientName, List<String> exludingIngredientName) {
+        if (includingIngredientName.stream()
+                .filter(i->exludingIngredientName.contains(i))
+                .count() > 0)
+            throw new SearchParamException("You cannot use same ingredient for including and excluding");
     }
 }

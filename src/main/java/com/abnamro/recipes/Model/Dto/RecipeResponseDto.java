@@ -1,12 +1,16 @@
 package com.abnamro.recipes.Model.Dto;
 
 import com.abnamro.recipes.Model.MealType;
-import lombok.Data;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class RecipeResponseDto {
     private String recipeName;
     private List<IngredientDto> ingredientList;

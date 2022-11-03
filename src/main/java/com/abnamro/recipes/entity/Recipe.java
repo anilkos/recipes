@@ -3,9 +3,7 @@ package com.abnamro.recipes.entity;
 
 import com.abnamro.recipes.Model.Ingredient;
 import com.abnamro.recipes.Model.MealType;
-import lombok.Data;
-import lombok.Generated;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -13,8 +11,11 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Document(collection = "recipes")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Recipe {
     @Id
     @Generated
