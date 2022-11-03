@@ -48,7 +48,7 @@ services:
 3) Implement a  fallback mechanism for  db connection. of course we should define proper bulkheads and timelimittters for those. 
 4) Add metric to capture more details and provide more data to create logging and monitoring system. (Grafana,Prometeus,Kibana ..)
 5) Provide CI/CD scripts to make the CI/CD process automatically.
-
+6) Different setups for different environments.
 
 
 ## License
